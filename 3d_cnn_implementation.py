@@ -61,6 +61,7 @@ def input_model_fcn(input,labels,mode):
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 def train_input_fcn(x={"x": train_data},y=train_labels,batch_size=100,num_epochs=None,shuffle=True):
+    
     pass
 
 
@@ -70,5 +71,6 @@ parkinson_classifier.train(input_fn=train_input_fn,steps=epochs)
 
 def eval_input_fn(x={"x": eval_data},y=eval_labels,num_epochs=1,shuffle=False):
     pass
+
 eval_results = parkinson_classifier.evaluate(input_fn=eval_input_fn)
 print(eval_results)
