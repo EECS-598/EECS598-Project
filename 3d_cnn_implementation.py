@@ -1,6 +1,8 @@
 import tensorflow as tf
-from tensorflow import keras
 import numpy as np
+from utilities import _read_csv_file
+from utilities import read_nii_image
+
 
 epochs = 500
 learning_rate = 0.001
@@ -60,8 +62,13 @@ def input_model_fcn(input,labels,mode):
     eval_metric_ops = { "accuracy": tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])}
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
-def train_input_fcn(x={"x": train_data},y=train_labels,batch_size=100,num_epochs=None,shuffle=True):
+def train_input_fcn(train_csv_file,batch_size=100,shuffle=True):
+    filenames, labels = _read_csv_file(train_csv)
+    dataset  = tf.data.Dataset.from_tensor_slices((filenames,labels))
+    dataset = dataset.map(lambda x:_ondisk_parse_(x)).shuffle(True).batch(batch_size)
+    ondisk_iterator = dataset.make_one_shot_iterator()
 
+    return ondisk_iterator.get_next()
     pass
 
 def eval_input_fn(x={"x": eval_data},y=eval_labels,num_epochs=1,shuffle=False):
