@@ -1,10 +1,9 @@
 import tensorflow as tf
 import numpy as np
-from utilities import _read_csv_file
-from utilities import read_nii_image
+import numpy as np
+import nibabel as nib
 
-
-epochs = 500
+epochs = 50
 learning_rate = 0.001
 batch_size = 8
 n_classes = 2
@@ -62,17 +61,26 @@ def input_model_fcn(input,labels,mode):
     eval_metric_ops = { "accuracy": tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])}
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
-def train_input_fcn(train_csv_file,batch_size=100,shuffle=True):
-    filenames, labels = _read_csv_file(train_csv)
-    dataset  = tf.data.Dataset.from_tensor_slices((filenames,labels))
-    dataset = dataset.map(lambda x:_ondisk_parse_(x)).shuffle(True).batch(batch_size)
-    ondisk_iterator = dataset.make_one_shot_iterator()
+def read_nii_image(filename,class_map):
+    t1 = nib.load(filename)
+    t1_array = nib_t1.get_data()
+    t1 = t1[..., np.newaxis]
+    base_dir = os.path.dirname(filename)
+    class_name = os.path.basename(base_dir)
+    label = class_map[class_name]
+    return (dict({'image':image}),label)
 
+def train_input_fcn(filenames,batch_size=100,shuffle=True):
+    dataset  = tf.data.Dataset.from_tensor_slices(filenames)
+    dataset = dataset.map(lambda x:read_nii_image(x)).shuffle(shuffle).batch(batch_size)
+    ondisk_iterator = dataset.make_one_shot_iterator()
     return ondisk_iterator.get_next()
-    pass
 
 def eval_input_fn(x={"x": eval_data},y=eval_labels,num_epochs=1,shuffle=False):
-    pass
+    dataset  = tf.data.Dataset.from_tensor_slices(filenames)
+    dataset = dataset.map(lambda x:read_nii_image(x)).shuffle(shuffle).batch(batch_size)
+    ondisk_iterator = dataset.make_one_shot_iterator()
+    return ondisk_iterator.get_next()
 
 parkinson_classifier = tf.estimator.Estimator(
     model_fn=input_model_fcn)
