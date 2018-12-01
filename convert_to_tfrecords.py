@@ -61,19 +61,19 @@ def main():
     current_dir = os.getcwd()
 
     train_dir = os.path.join(current_dir,'PPMI','Train')
-    validation_dir = os.path.join(current_dir,'PPMI','Validation')
-    test_dir = os.path.join(current_dir,'PPMI','Test')
+    # validation_dir = os.path.join(current_dir,'PPMI','Validation')
+    # test_dir = os.path.join(current_dir,'PPMI','Test')
 
     train_filename = 'train_tfrecords'
-    validation_filename = 'validation_tfrecords'
-    test_filename = 'test_tfrecords'
+    # validation_filename = 'validation_tfrecords'
+    # test_filename = 'test_tfrecords'
 
     name_to_label = {'PD':1, 'HC': 0}
     label_to_name = {1:"Parkinson's Disease", 2: 'Healthy'}
 
     convert_to_tfrecord(train_filename,train_dir,name_to_label)
-    convert_to_tfrecord(validation_filename,validation_dir,name_to_label)
-    convert_to_tfrecord(test_filename,test_dir,name_to_label)
+    # convert_to_tfrecord(validation_filename,validation_dir,name_to_label)
+    # convert_to_tfrecord(test_filename,test_dir,name_to_label)
 
 
 if __name__ == '__main__':
