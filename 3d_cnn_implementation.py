@@ -15,8 +15,8 @@ y = tf.placeholder("float", [None, n_classes])
 class_map = {'HC':0, 'PD':1}
 curr_dir = os.getcwd()
 directory = os.path.join(curr_dir,'PPMI')
-filenames = glob.glob(directory + '**/*.nii.gz')
-
+train_filenames = glob.glob(directory + 'Train' + '*.nii.gz')
+val_filenames = glob.glob(directory + 'Validation' + '*.nii.gz')
 def input_model_fcn(features,labels,mode):
     conv1 = tf.layers.conv3d(inputs=features,filters=32,
                             kernel_size=[3,3,3],padding="same",
@@ -68,8 +68,8 @@ def input_model_fcn(features,labels,mode):
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 def read_nii_image(filename,class_map):
-    filename = tf.cast([filename],tf.string)
-    print(filename)
+    filename = tf.cast(filename,tf.string)
+    # print(filename[0])
     t1 = nib.load(filename)
     t1_array = nib_t1.get_data()
     t1 = t1[..., np.newaxis]
@@ -97,7 +97,7 @@ parkinson_classifier = tf.estimator.Estimator(
     #     save_summary_steps = 100,
     #     keep_checkpoint_max=5)
     )
-parkinson_classifier.train(input_fn=lambda: train_input_fcn(filenames,class_map,batch_size=batch_size),steps=epochs)
+parkinson_classifier.train(input_fn=lambda: train_input_fcn(train_filenames,class_map,batch_size=batch_size),steps=epochs)
 
 # eval_results = parkinson_classifier.evaluate(input_fn=eval_input_fn)
 # print(eval_results)
