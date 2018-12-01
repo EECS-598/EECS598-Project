@@ -17,8 +17,8 @@ curr_dir = os.getcwd()
 directory = os.path.join(curr_dir,'PPMI')
 filenames = glob.glob(directory + '**/*.nii.gz')
 
-def input_model_fcn(input,labels,mode):
-    conv1 = tf.layers.conv3d(inputs=input_layer,filters=32,
+def input_model_fcn(features,labels,mode):
+    conv1 = tf.layers.conv3d(inputs=features,filters=32,
                             kernel_size=[3,3,3],padding="same",
                             activation=tf.nn.relu)
     conv2 = tf.layers.conv3d(inputs=conv1,filters=32,
@@ -68,17 +68,19 @@ def input_model_fcn(input,labels,mode):
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 def read_nii_image(filename,class_map):
+    filename = tf.cast([filename],tf.string)
+    print(filename)
     t1 = nib.load(filename)
     t1_array = nib_t1.get_data()
     t1 = t1[..., np.newaxis]
     base_dir = os.path.dirname(filename)
     class_name = os.path.basename(base_dir)
     label = class_map[class_name]
-    return (dict({'image':image}),label)
+    return ({'features':image},label)
 
-def train_input_fcn(filenames,batch_size=100,shuffle=True):
+def train_input_fcn(filenames,class_map,batch_size=100,shuffle=True):
     dataset  = tf.data.Dataset.from_tensor_slices(filenames)
-    dataset = dataset.map(lambda x:read_nii_image(x)).shuffle(shuffle).batch(batch_size)
+    dataset = dataset.map(lambda x:read_nii_image(x,class_map)).shuffle(shuffle).batch(batch_size)
     ondisk_iterator = dataset.make_one_shot_iterator()
     return ondisk_iterator.get_next()
 
@@ -95,7 +97,7 @@ parkinson_classifier = tf.estimator.Estimator(
     #     save_summary_steps = 100,
     #     keep_checkpoint_max=5)
     )
-parkinson_classifier.train(input_fn=train_input_fn,steps=epochs)
+parkinson_classifier.train(input_fn=lambda: train_input_fcn(filenames,class_map,batch_size=batch_size),steps=epochs)
 
 # eval_results = parkinson_classifier.evaluate(input_fn=eval_input_fn)
 # print(eval_results)
