@@ -2,14 +2,20 @@ import tensorflow as tf
 import numpy as np
 import numpy as np
 import nibabel as nib
+import glob
+import os
 
-epochs = 50
+epochs = 1
 learning_rate = 0.001
 batch_size = 8
 n_classes = 2
-input_dimension = id = [80,100,108]
+input_dimension = id = [256,256,88]
 x = tf.placeholder("float", [None,id[0],id[1],id[2]])
 y = tf.placeholder("float", [None, n_classes])
+class_map = {'HC':0, 'PD':1}
+curr_dir = os.getcwd()
+directory = os.path.join(curr_dir,'PPMI')
+filenames = glob.glob(directory + '**/*.nii.gz')
 
 def input_model_fcn(input,labels,mode):
     conv1 = tf.layers.conv3d(inputs=input_layer,filters=32,
@@ -59,7 +65,7 @@ def input_model_fcn(input,labels,mode):
 
       # Add evaluation metrics (for EVAL mode)
     eval_metric_ops = { "accuracy": tf.metrics.accuracy(labels=labels, predictions=predictions["classes"])}
-        return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
+    return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 def read_nii_image(filename,class_map):
     t1 = nib.load(filename)
@@ -76,15 +82,20 @@ def train_input_fcn(filenames,batch_size=100,shuffle=True):
     ondisk_iterator = dataset.make_one_shot_iterator()
     return ondisk_iterator.get_next()
 
-def eval_input_fn(x={"x": eval_data},y=eval_labels,num_epochs=1,shuffle=False):
+def eval_input_fn(filenames,batch_size=100,shuffle=True):
     dataset  = tf.data.Dataset.from_tensor_slices(filenames)
     dataset = dataset.map(lambda x:read_nii_image(x)).shuffle(shuffle).batch(batch_size)
     ondisk_iterator = dataset.make_one_shot_iterator()
     return ondisk_iterator.get_next()
 
 parkinson_classifier = tf.estimator.Estimator(
-    model_fn=input_model_fcn)
+    model_fn=input_model_fcn,
+    # config = tf.estimator.RunConfig(
+    #     save_checkpoints_steps = 2000,
+    #     save_summary_steps = 100,
+    #     keep_checkpoint_max=5)
+    )
 parkinson_classifier.train(input_fn=train_input_fn,steps=epochs)
 
-eval_results = parkinson_classifier.evaluate(input_fn=eval_input_fn)
-print(eval_results)
+# eval_results = parkinson_classifier.evaluate(input_fn=eval_input_fn)
+# print(eval_results)
