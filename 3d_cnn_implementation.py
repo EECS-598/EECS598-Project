@@ -6,8 +6,8 @@ import glob
 import os
 
 epochs = 1
-learning_rate = 0.001
-batch_size = 8
+learning_rate = 0.01
+batch_size = 4
 n_classes = 2
 input_dimension = id = [256,256,88]
 x = tf.placeholder("float", [None,id[0],id[1],id[2]])
