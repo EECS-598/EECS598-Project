@@ -60,7 +60,7 @@ def main():
 
     current_dir = os.getcwd()
 
-    train_dir = os.path.join(current_dir,'PPMI','Train')
+    train_dir = os.path.join(current_dir,'PPMI_new','Train')
     # validation_dir = os.path.join(current_dir,'PPMI','Validation')
     # test_dir = os.path.join(current_dir,'PPMI','Test')
 

@@ -1,0 +1,16 @@
+#PBS -N 3d_cnn
+#PBS -M anushaj@umich.edu
+#PBS -m abe
+#PBS -V
+
+#PBS -l walltime=80:00:00
+#PBS -l procs=4,pmem=4096mb
+
+
+#PBS -A eecs598f18_fluxg
+#PBS -q fluxg
+#PBS -l qos=flux
+
+cd $PBS_O_WORKDIR
+
+python ./3d_cnn_implementation.py
