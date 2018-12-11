@@ -20,14 +20,20 @@ def load_image(filename):
     t1 = t1[..., np.newaxis]
     return t1
 
-def convert_to_tfrecord(dataset_name, data_directory, class_map, segments=1, files='*.nii.gz'):
+def convert_to_tfrecord(dataset_name, data_directory, class_map, segments=1):
 
-    path = os.path.join(data_directory,'**',files)
-    filenames = glob.glob(path, recursive=True)
+    files1 = '*.nii.gz'
+    files2 = '*.nii'
+    path1 = os.path.join(data_directory,'**',files1)
+    path2 = os.path.join(data_directory,'**',files2)
+    filenames1 = glob.glob(path1, recursive=True)
+    filenames2 = glob.glob(path2, recursive=True)
+    filenames = filenames1 + filenames2
     classes = (os.path.basename(os.path.dirname(name)) for name in filenames)
     dataset = list(zip(filenames, classes))
 
     num_examples = len(filenames)
+
     samples_per_segment = num_examples // segments
 
     print(f"Have {samples_per_segment} per record file")
@@ -60,20 +66,20 @@ def main():
 
     current_dir = os.getcwd()
 
-    train_dir = os.path.join(current_dir,'PPMI_new','Train')
+    train_dir = os.path.join(current_dir,'PPMI','Train')
     # validation_dir = os.path.join(current_dir,'PPMI','Validation')
-    # test_dir = os.path.join(current_dir,'PPMI','Test')
+    test_dir = os.path.join(current_dir,'PPMI','Test')
 
     train_filename = 'train_tfrecords'
     # validation_filename = 'validation_tfrecords'
-    # test_filename = 'test_tfrecords'
+    test_filename = 'test_tfrecords'
 
     name_to_label = {'PD':1, 'HC': 0}
     label_to_name = {1:"Parkinson's Disease", 2: 'Healthy'}
 
-    convert_to_tfrecord(train_filename,train_dir,name_to_label)
+    convert_to_tfrecord(train_filename,train_dir,name_to_label,segments=4)
     # convert_to_tfrecord(validation_filename,validation_dir,name_to_label)
-    # convert_to_tfrecord(test_filename,test_dir,name_to_label)
+    convert_to_tfrecord(test_filename,test_dir,name_to_label)
 
 
 if __name__ == '__main__':
