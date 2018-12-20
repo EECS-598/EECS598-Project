@@ -4,6 +4,10 @@ import numpy as np
 # import nibabel as nib
 import glob
 import os
+import sys
+
+sys.stdout = open('log.txt', 'w')
+
 
 epochs = 1
 learning_rate = 0.01
@@ -16,8 +20,8 @@ directory = os.path.join(curr_dir)
 
 train_tfrecords_path = glob.glob('PPMI/Train/*')
 
-test_tfrecords_path = glob.glob('PPMI/Test/*')
-
+# test_tfrecords_path = glob.glob('PPMI/Test/test_tfrecords-0.tfrecords')
+test_tfrecords_path = '/home/ubuntu/ai/New folder/Test/test_tfrecords-0.tfrecords'
 tf.logging.set_verbosity(tf.logging.INFO)
 
 def input_model_fcn(features,labels,mode):
@@ -58,27 +62,55 @@ def input_model_fcn(features,labels,mode):
 
     dropout = tf.layers.dropout(inputs=dense2, rate=0.4, training = mode == tf.estimator.ModeKeys.TRAIN)
 
+
+
     logits = tf.layers.dense(inputs=dropout, units=2)
 
+    logits = tf.Print(logits, [tf.argmax(input=logits, axis=1)], 'pred: ')
+    #tf.print("Pred :",tf.argmax(input=logits, axis=1), output_stream=sys.stdout)
+
+    logits = tf.Print(logits, [ tf.argmax(labels,axis=1)], 'lab: ')
+
+
+    # probabilities =  tf.nn.softmax(logits)
+
+
+
+    predictions = {
+      # Generate predictions (for PREDICT and EVAL mode)
+      "classes": tf.argmax(input=logits, axis=1),
+      # "classes": tf.argmax(labels, axis=1),
+      # Add `softmax_tensor` to the graph. It is used for PREDICT and by the
+      # `logging_hook`.
+      "probabilities": tf.nn.softmax(logits, name="softmax_tensor"),
+
+
+
+    }
+
     if mode == tf.estimator.ModeKeys.PREDICT:
-        return tf.estimator.EstimatorSpec(mode=mode, predictions=tf.argmax(input=logits, axis=1))
+        return tf.estimator.EstimatorSpec(mode=mode, predictions=predictions)
 
   # Calculate Loss (for both TRAIN and EVAL modes)
     loss = tf.losses.softmax_cross_entropy(onehot_labels=labels, logits=logits)
 
-    logging_hook = tf.train.LoggingTensorHook({"loss":loss},every_n_iter=1)
+    logging_hook = tf.train.LoggingTensorHook({"loss":loss,"pred":tf.argmax(input=logits, axis=1),"labels":tf.argmax(labels,axis=1)},every_n_iter=1)
 
       # Configure the Training Op (for TRAIN mode)
     if mode == tf.estimator.ModeKeys.TRAIN:
-        optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
+        optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
         train_op = optimizer.minimize(
             loss=loss,
             global_step=tf.train.get_global_step())
         return tf.estimator.EstimatorSpec(mode=mode, loss=loss, train_op=train_op,training_hooks=[logging_hook])
 
       # Add evaluation metrics (for EVAL mode)
-    eval_metric_ops = { "accuracy": tf.metrics.accuracy(labels=tf.argmax(labels), predictions=tf.argmax(input=logits, axis=1))}
 
+
+    eval_metric_ops = { "accuracy": tf.metrics.accuracy(labels=tf.argmax(labels,axis=1), predictions=tf.argmax(input=logits, axis=1)}
+
+
+    print(tf.argmax(input=logits,axis=1))
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 def _parse_(serialized_example):
@@ -90,6 +122,7 @@ def _parse_(serialized_example):
     image = tf.reshape(image,[128,128,48,1])
     label = tf.cast(example['label'],tf.int64)
     label = tf.one_hot(label,depth=2)
+    print(label)
     return image, label
 
 # def train_input_fcn(batch_size=batch_size):
@@ -106,6 +139,7 @@ def _parse_(serialized_example):
 #     return tfrecord_iterator.get_next()
 
 def input_fn(is_training, filenames, batch_size, num_epochs=1, num_parallel_calls=1):
+
     print(filenames)
     dataset = tf.data.TFRecordDataset(filenames)
 
@@ -114,23 +148,27 @@ def input_fn(is_training, filenames, batch_size, num_epochs=1, num_parallel_call
 
     dataset = dataset.map(lambda value: _parse_(value),num_parallel_calls=num_parallel_calls)
 
-    dataset = dataset.shuffle(buffer_size=10000)
+    dataset = dataset.shuffle(buffer_size=100000)
     dataset = dataset.batch(batch_size)
-    dataset = dataset.repeat(num_epochs)
+    #dataset = dataset.repeat(num_epochs)
     iterator = dataset.make_one_shot_iterator()
 
     return iterator.get_next()
 
+
 def train_input_fn(file_path):
-    return input_fn(True, file_path, batch_size, 5, 5)
+    return input_fn(True, file_path, 10, 700, 1)
 
 
 def eval_input_fn(file_path):
+    return input_fn(False, file_path, 10, 1, 10)
+
+def pred_input_fn(file_path):
     return input_fn(False, file_path, 2, 1, 1)
 
 
 parkinson_classifier = tf.estimator.Estimator(
-    model_fn=input_model_fcn, model_dir="model"
+    model_fn=input_model_fcn, model_dir="model_v1"
     #,
     #config = tf.estimator.RunConfig(
     #    save_checkpoints_steps = 0,
@@ -140,9 +178,7 @@ parkinson_classifier = tf.estimator.Estimator(
 
 
 # parkinson_classifier.train(input_fn=lambda: train_input_fcn(train_filenames,class_map,batch_size=batch_size),steps=epochs)
-parkinson_classifier.train(input_fn=lambda: train_input_fn(train_tfrecords_path))
+#parkinson_classifier.train(input_fn=lambda: train_input_fn(train_tfrecords_path))
 
 print('Training done')
 eval_results = parkinson_classifier.evaluate(input_fn= lambda: eval_input_fn(test_tfrecords_path))
-
-print(eval_results)
