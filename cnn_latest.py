@@ -20,8 +20,8 @@ directory = os.path.join(curr_dir)
 
 train_tfrecords_path = glob.glob('PPMI/Train/*')
 
-# test_tfrecords_path = glob.glob('PPMI/Test/test_tfrecords-0.tfrecords')
-test_tfrecords_path = '/home/ubuntu/ai/New folder/Test/test_tfrecords-0.tfrecords'
+test_tfrecords_path = glob.glob('PPMI/Test/test_tfrecords-0.tfrecords')
+#test_tfrecords_path = '/home/ubuntu/ai/New folder/Test/test_tfrecords-0.tfrecords'
 tf.logging.set_verbosity(tf.logging.INFO)
 
 def input_model_fcn(features,labels,mode):
@@ -66,10 +66,12 @@ def input_model_fcn(features,labels,mode):
 
     logits = tf.layers.dense(inputs=dropout, units=2)
 
-    logits = tf.Print(logits, [tf.argmax(input=logits, axis=1)], 'pred: ')
+    logits = tf.Print(logits, [tf.argmax(input=logits, axis=1)], 'Predictions: ',summarize=10)
+
+    #logits = tf.Print(logits, [tf.nn.softmax(logits)], 'prob: ',summarize=30)
     #tf.print("Pred :",tf.argmax(input=logits, axis=1), output_stream=sys.stdout)
 
-    logits = tf.Print(logits, [ tf.argmax(labels,axis=1)], 'lab: ')
+    logits = tf.Print(logits, [ tf.argmax(labels,axis=1)], 'Labels: ',summarize=10)
 
 
     # probabilities =  tf.nn.softmax(logits)
@@ -107,7 +109,7 @@ def input_model_fcn(features,labels,mode):
       # Add evaluation metrics (for EVAL mode)
 
 
-    eval_metric_ops = { "accuracy": tf.metrics.accuracy(labels=tf.argmax(labels,axis=1), predictions=tf.argmax(input=logits, axis=1)}
+    eval_metric_ops = { "accuracy": tf.metrics.accuracy(labels=tf.argmax(labels,axis=1), predictions=tf.argmax(input=logits, axis=1))}
 
 
     print(tf.argmax(input=logits,axis=1))
